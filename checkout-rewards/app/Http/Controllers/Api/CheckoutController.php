@@ -121,7 +121,7 @@ class CheckoutController extends Controller
 
                     if ($item->quantity > $product->stock) {
                         abort(
-                            422,
+                            409,
                             "Insufficient stock for {$product->name}."
                         );
                     }

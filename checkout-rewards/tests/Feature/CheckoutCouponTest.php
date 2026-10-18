@@ -97,7 +97,7 @@ public function test_failed_checkout_does_not_redeem_coupon(): void
         ]
     );
 
-    $response->assertStatus(422);
+    $response->assertStatus(409);
 
     $this->assertDatabaseMissing('orders', [
         'cart_id' => $cart->id,

@@ -1,1 +1,477 @@
-start time: 11.20 am Sunday 18/10/26
+# Checkout and Rewards Service
+
+A Laravel REST API for an e-commerce checkout system with inventory management, idempotent order creation, coupon rewards, and sales reporting.
+
+The project focuses on data consistency, reliable checkout behavior, integer-based money calculations, and protection against duplicate orders and coupon redemption.
+
+## 1. Features
+
+### Product and Cart Management
+- List available products with prices and stock.
+- Create and retrieve shopping carts.
+- Add, update, and remove cart items.
+- Prevent duplicate product entries within the same cart.
+- Calculate cart totals using integer monetary values.
+- Validate product quantities and available inventory.
+
+### Checkout and Orders
+- Place orders from open carts.
+- Prevent duplicate orders when checkout requests are retried with the same idempotency key.
+- Reject conflicting idempotency keys.
+- Validate current prices and stock during checkout.
+- Deduct inventory within a database transaction.
+- Store purchase-time product details as order item snapshots.
+- Return the existing order for a valid checkout retry.
+- Retrieve an order and its item details.
+
+### Coupon and Rewards System
+- Generate reward coupons after configurable successful-order milestones.
+- Configure the order interval and coupon discount percentage.
+- Generate eligible milestone coupons without duplicating existing milestones.
+- Apply an optional coupon during checkout.
+- Prevent reuse of a redeemed coupon.
+- Keep coupon redemption within the checkout transaction so a failed checkout does not consume the coupon.
+
+### Reporting
+- Report quantities sold by product.
+- Calculate gross sales, discounts, and net sales.
+- Report coupon counts by status.
+- Keep report requests read-only.
+
+### User Interface
+A lightweight Blade-based checkout page is available at `/checkout` for interacting with the service.
+
+## 2. Technology Stack
+
+- PHP 8.2
+- Laravel 12
+- MySQL for local application development
+- SQLite in-memory database for automated feature tests
+- Blade, HTML, CSS, and JavaScript
+- PHPUnit / Laravel testing tools
+- Postman for API verification
+
+## 3. Prerequisites
+
+Install the following before running the project:
+
+- PHP 8.2 or a compatible version
+- Composer
+- MySQL
+- A compatible PHP database driver, such as `pdo_mysql`
+- Node.js and npm only if you need to build frontend assets
+
+The current checkout page uses Blade and can be served by Laravel. Follow any additional asset-build instructions in the repository if frontend dependencies are introduced.
+
+## 4. Installation and Setup
+
+### Step 1: Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd checkout-rewards
+```
+
+Replace `<your-repository-url>` with the actual Git repository URL.
+
+### Step 2: Install PHP dependencies
+
+```bash
+composer install
+```
+
+### Step 3: Configure the environment
+
+Copy `.env.example` to `.env`.
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Generate the application key:
+
+```bash
+php artisan key:generate
+```
+
+### Step 4: Create the database
+
+Create a MySQL database named:
+
+```sql
+CREATE DATABASE checkout_rewards;
+```
+
+Configure the database settings in `.env`:
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=checkout_rewards
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Update the username and password to match your local MySQL configuration.
+
+### Step 5: Run migrations and seed data
+
+```bash
+php artisan migrate --seed
+```
+
+The seeders create sample products and default reward settings.
+
+| Product | Price | Initial stock |
+|---|---:|---:|
+| Wireless Mouse | ₹12.99 | 50 |
+| Mechanical Keyboard | ₹59.99 | 20 |
+| USB-C Cable | ₹7.99 | 100 |
+| Laptop Stand | ₹24.99 | 10 |
+| Webcam | ₹39.99 | 2 |
+
+The Webcam provides a low-stock product for inventory validation.
+
+Default reward settings:
+
+| Setting | Value |
+|---|---:|
+| Successful orders per milestone | 5 |
+| Coupon discount | 10% |
+
+Prices above are illustrative currency formatting for the integer values stored in the database. The application stores monetary values in minor units; for example, `1299` represents ₹12.99 when the currency is INR.
+
+### Step 6: Start the application
+
+```bash
+php artisan serve
+```
+
+Open the checkout page:
+
+`http://127.0.0.1:8000/checkout`
+
+The API base URL is:
+
+`http://127.0.0.1:8000/api`
+
+## 5. API Documentation
+
+All endpoints below use the `/api` prefix.
+
+Send JSON request bodies with the header:
+
+```http
+Content-Type: application/json
+Accept: application/json
+```
+
+Exact response fields and status codes should be confirmed against the implemented controllers.
+
+### Products
+
+#### List products
+
+`GET /api/products`
+
+Returns the available product records, including their prices and stock information.
+
+### Carts
+
+#### Create a cart
+
+`POST /api/carts`
+
+Creates a new cart.
+
+#### View a cart
+
+`GET /api/carts/{cart}`
+
+Returns the cart and its items, including product information and totals where provided by the controller.
+
+#### Add an item
+
+`POST /api/carts/{cart}/items`
+
+Example request:
+
+```json
+{
+  "product_id": 1,
+  "quantity": 2
+}
+```
+
+Adds the specified product and quantity to the cart.
+
+#### Update an item
+
+`PUT /api/carts/{cart}/items/{item}`
+
+Example request:
+
+```json
+{
+  "quantity": 3
+}
+```
+
+Updates the quantity of an existing cart item.
+
+#### Remove an item
+
+`DELETE /api/carts/{cart}/items/{item}`
+
+Removes the specified item from the cart.
+
+### Checkout
+
+#### Place an order
+
+`POST /api/carts/{cart}/checkout`
+
+Example request without a coupon:
+
+```json
+{
+  "idempotency_key": "checkout-cart-1-001"
+}
+```
+
+Example request with a coupon:
+
+```json
+{
+  "idempotency_key": "checkout-cart-1-002",
+  "coupon_id": 1
+}
+```
+
+The idempotency key is required. When retrying the same logical checkout, reuse the original key.
+
+The checkout process:
+1. Validates the cart and request.
+2. Checks for an existing order and handles retries.
+3. Locks relevant records within a database transaction.
+4. Validates current inventory and product prices.
+5. Calculates item totals, gross amount, discount, and net amount.
+6. Creates the order and immutable item snapshots.
+7. Deducts inventory and redeems the coupon, if applicable.
+8. Marks the cart as checked out.
+
+A new successful checkout returns `201 Created`. A valid retry can return `200 OK` with the existing order. Conflicting checkout requests return an appropriate error.
+
+No external payment gateway is integrated; successful checkout represents a successful order for the purposes of this assignment.
+
+### Orders
+
+#### Retrieve an order
+
+`GET /api/orders/{order}`
+
+Returns the order totals and purchase-time item snapshots, including product name, unit price, quantity, and line total.
+
+An unknown order ID returns `404 Not Found`.
+
+### Coupons
+
+#### List available coupons
+
+`GET /api/coupons/available`
+
+Returns coupons currently marked as available.
+
+Example response structure:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "milestone_order_count": 5,
+      "discount_percent": 10,
+      "status": "available"
+    }
+  ]
+}
+```
+
+#### Generate an eligible coupon
+
+`POST /api/admin/coupons/generate`
+
+No request body is required.
+
+Generates one coupon for the next eligible milestone that does not already have a coupon.
+
+A successful generation returns `201 Created`. If no new eligible milestone is available, the endpoint returns `409 Conflict`.
+
+Example success response:
+
+```json
+{
+  "message": "Reward coupon generated successfully.",
+  "data": {
+    "id": 1,
+    "milestone_order_count": 5,
+    "discount_percent": 10,
+    "status": "available"
+  }
+}
+```
+
+**Security limitation:** The current assignment endpoint does not enforce administrator authentication or authorization. It is a demonstration endpoint and must be protected before production use.
+
+### Admin Report
+
+#### Retrieve the report
+
+`GET /api/admin/report`
+
+Returns the reporting data implemented by the report controller, including product quantities and sales totals, discounts, net sales, and coupon counts.
+
+This is a read-only endpoint. It must not create, redeem, or modify coupons or orders.
+
+**Security limitation:** The report endpoint is currently public unless access control has been added separately.
+
+## 6. Business Rules and Design Decisions
+
+### Money calculations
+All monetary amounts are stored as integer minor units rather than floating-point values.
+
+- `gross_cents` is the sum of order-item line totals.
+- `discount_cents` is the applied discount.
+- `net_cents` equals gross minus discount.
+- Percentage discounts use integer division and round down to the nearest minor unit.
+
+### Inventory
+- Stock is checked at checkout, not trusted from the time an item was added to the cart.
+- A checkout requesting more units than are available is rejected.
+- Inventory deduction and order creation occur in a database transaction.
+- Product records are locked during checkout where supported by the database engine.
+
+### Idempotency
+- Each checkout request requires an idempotency key.
+- Retrying with the same cart and key returns the existing order.
+- A different key for an already checked-out cart is rejected.
+- A key cannot be reused for another cart.
+- Database uniqueness constraints reinforce these rules.
+
+### Order snapshots
+Order items preserve product name, unit price, quantity, and line total at purchase time. Historical order details do not depend on the current product name or price.
+
+### Rewards
+- Only successfully placed orders count toward reward milestones.
+- A unique milestone constraint prevents duplicate coupons for the same milestone.
+- Coupons can be redeemed only once.
+- Coupon redemption and order creation share a transaction.
+- Failed checkout must not leave a coupon redeemed.
+
+### HTTP error handling
+The service uses status codes to distinguish successful requests, missing resources, invalid input, and conflicts with existing business state. Typical codes include `200`, `201`, `404`, `409`, and `422`, depending on the endpoint and failure condition.
+
+## 7. Running Tests
+
+The PHPUnit configuration uses an in-memory SQLite database for automated tests. This keeps test data isolated from the local MySQL database.
+
+Run the complete suite:
+
+```bash
+php artisan test
+```
+
+Run focused test groups:
+
+```bash
+php artisan test --filter=RewardGenerationTest
+php artisan test --filter=CheckoutCouponTest
+php artisan test --filter=InventoryCheckoutTest
+php artisan test --filter=AdminReportTest
+php artisan test --filter=OrderRetrievalTest
+```
+
+The tests cover reward milestones, coupon redemption, checkout retries, conflicting idempotency keys, inventory checks, order retrieval, snapshots, and reporting behavior.
+
+**Important:** Run the tests and verify their final output before submission. Do not report that the full suite passes unless it has completed successfully.
+
+Do not run `php artisan migrate:fresh` against a database containing data you want to keep; it drops existing tables before recreating them.
+
+## 8. Concurrency and Reliability
+
+The implementation uses transactions, row locking, and database uniqueness constraints to protect checkout-related state.
+
+However, the existing automated inventory test exercises two checkouts sequentially. SQLite in-memory tests do not establish that MySQL row locks behave correctly under genuinely simultaneous requests.
+
+A true concurrency validation should use a dedicated MySQL test database and concurrent checkout requests to verify that:
+- Two carts cannot purchase the final unit simultaneously.
+- Two checkout requests cannot redeem the same coupon.
+- Repeated requests do not create duplicate orders.
+- Transaction retries and conflicts leave inventory, orders, and coupons consistent.
+
+This remains an important validation step before making production-level concurrency claims.
+
+## 9. Current Limitations
+
+- No real payment gateway or payment lifecycle.
+- Administrator endpoints do not currently enforce authentication or authorization.
+- No production customer authentication or cart ownership enforcement is documented as implemented.
+- Genuine concurrent MySQL testing remains outstanding.
+- No production deployment pipeline, monitoring, backup automation, or disaster-recovery procedure is included.
+- Post-checkout reward reconciliation could be strengthened with a durable job or transactional outbox.
+
+These limitations are identified rather than treated as completed features.
+
+## 10. Suggested Postman Verification
+
+The following sequence can be used to verify the main workflow:
+
+1. List products.
+2. Create a cart.
+3. Add a product to the cart.
+4. Retrieve the cart and inspect its total.
+5. Submit checkout with an idempotency key.
+6. Repeat checkout with the same key and confirm that another order is not created.
+7. Retrieve the order and inspect its item snapshots.
+8. Test insufficient stock and confirm the checkout fails without partially updating state.
+9. List available coupons.
+10. After the configured order milestone is reached, test coupon generation and redemption.
+11. Retrieve the admin report and verify that a GET request does not mutate data.
+
+Use a disposable test database or controlled test data for destructive scenarios.
+
+## 11. Project Documentation
+
+- `README.md` — installation, API usage, business rules, testing, and limitations.
+- `DECISIONS.md` — design rationale, invariants, alternatives, testing limitations, AI usage, and future improvements.
+
+## 12. Future Improvements
+
+If more development time were available, the next priorities would be:
+
+1. Add genuine concurrent MySQL tests for inventory and coupon redemption.
+2. Add authentication, authorization, and cart ownership checks.
+3. Standardize API response and error formats.
+4. Add structured logging, monitoring, and request correlation IDs.
+5. Add a durable reward-generation and reconciliation mechanism.
+6. Integrate a payment provider using idempotent payment operations.
+7. Add load testing, database query-plan review, backup validation, and deployment rollback procedures.
+
+The main design principle is that the database remains the authoritative source for inventory, order idempotency, and coupon redemption.
+
+## 13. Development Time
+
+**Total time spent: 3 hours 30 minutes**
+
+| Work session | Time | Duration |
+|---|---|---:|
+| Session 1 | 11:30 AM – 1:30 PM | 2 hours |
+| Session 2 | 2:30 PM – 4:10 PM | 1 hour 40 minutes |
+| **Total** | | **3 hours 40 minutes** |
+
+The implementation was completed within approximately 3.5 hours, covering the core checkout and rewards functionality, API endpoints, database setup, Blade interface, automated tests, and documentation.
+
+Some additional validation remains outstanding, particularly genuine concurrent-request testing against MySQL and production security hardening.
