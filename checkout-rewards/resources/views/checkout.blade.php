@@ -1,203 +1,766 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout & Rewards</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102a56">
+    <title>Checkout & Rewards | Commerce Console</title>
 
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --navy: #102a56;
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --ink: #17233b;
+            --muted: #718096;
+            --line: #e5eaf2;
+            --surface: #ffffff;
+            --background: #f5f7fb;
+            --green: #15803d;
+            --red: #b91c1c;
+            --radius: 16px;
+            --shadow: 0 8px 28px rgba(20, 40, 80, .055);
         }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f3f6fb;
-            color: #172033;
+            background: var(--background);
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont,
+                "Segoe UI", sans-serif;
+            font-size: 14px;
+            line-height: 1.55;
         }
 
-        header {
-            background: #062a54;
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        button:disabled { opacity: .48; cursor: not-allowed; }
+
+        button:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 3px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+        .topbar {
+            background: var(--navy);
             color: white;
-            padding: 22px;
-            text-align: center;
+            padding: 19px 24px;
         }
 
-        main {
-            max-width: 1100px;
-            margin: 25px auto;
-            padding: 0 16px;
+        .topbar-inner, .page, .footer-inner {
+            width: min(1240px, calc(100% - 40px));
+            margin: auto;
         }
 
-        .panel {
-            background: white;
-            padding: 22px;
+        .topbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #2e63c9;
+            font-weight: 800;
+            font-size: 19px;
+        }
+
+        .brand h1 { font-size: 17px; margin: 0; }
+        .brand p { margin: 2px 0 0; color: #c4d4ef; font-size: 12px; }
+
+        .top-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #dbeafe;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        .page { padding: 30px 0 44px; }
+
+        .welcome {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .eyebrow {
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .welcome h2 {
+            margin: 5px 0 6px;
+            font-size: clamp(25px, 4vw, 32px);
+            letter-spacing: -1px;
+        }
+
+        .welcome p { margin: 0; color: var(--muted); }
+
+        .button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            padding: 10px 15px;
+            font-weight: 700;
+            transition: background .15s, transform .15s;
+        }
+
+        .button:not(:disabled):active { transform: translateY(1px); }
+        .primary { background: var(--blue); color: white; }
+        .primary:hover:not(:disabled) { background: #1d4ed8; }
+        .secondary { background: white; color: var(--ink); border-color: #d9e1ed; }
+        .secondary:hover:not(:disabled) { background: #f8fafc; }
+        .danger { background: #fff1f2; color: var(--red); border-color: #ffe0e4; }
+        .small { padding: 7px 10px; font-size: 12px; }
+
+        .notice {
+            display: none;
             margin-bottom: 20px;
-            border-radius: 10px;
-            box-shadow: 0 3px 12px #0000000d;
+            padding: 13px 16px;
+            border: 1px solid transparent;
+            border-radius: 11px;
         }
 
-        h2 {
-            margin-top: 0;
-            color: #075bd8;
+        .notice.success { display: block; color: #166534; background: #f0fdf4; border-color: #bbf7d0; }
+        .notice.error { display: block; color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+        .notice.info { display: block; color: #1e40af; background: #eff6ff; border-color: #bfdbfe; }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 22px;
         }
+
+        .metric, .panel {
+            background: var(--surface);
+            border: 1px solid #e9edf4;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .metric { padding: 18px; }
+        .metric-label { color: var(--muted); font-size: 12px; }
+        .metric-value { font-size: 24px; font-weight: 800; margin-top: 5px; letter-spacing: -.6px; }
+        .metric-note { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(310px, .85fr);
+            align-items: start;
+            gap: 20px;
+        }
+
+        .left-column, .right-column {
+            display: grid;
+            gap: 20px;
+            min-width: 0;
+        }
+
+        .panel { padding: 22px; }
+
+        .panel-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .panel-heading h3 { margin: 0; font-size: 17px; letter-spacing: -.3px; }
+        .panel-heading p { color: var(--muted); margin: 4px 0 0; font-size: 12px; }
+
+        .count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 25px;
+            height: 25px;
+            padding: 0 7px;
+            border-radius: 8px;
+            background: var(--blue-light);
+            color: var(--blue);
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #4b5870;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .field, select {
+            width: 100%;
+            min-height: 41px;
+            padding: 9px 11px;
+            border: 1px solid #dbe2ec;
+            border-radius: 9px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .cart-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: end;
+            gap: 9px;
+            margin-bottom: 17px;
+        }
+
+        .cart-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: capitalize;
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .pill.open, .pill.available { background: #dcfce7; color: #166534; }
+        .pill.checked_out, .pill.redeemed { background: #e2e8f0; color: #475569; }
+
+        .cart-line {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            padding: 16px 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .item-name { font-weight: 750; }
+        .item-description { margin-top: 3px; color: var(--muted); font-size: 12px; }
+        .item-subtotal { margin-top: 6px; font-weight: 800; }
+
+        .item-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .quantity {
+            width: 65px;
+            min-height: 34px;
+            padding: 5px 7px;
+            border: 1px solid #dbe2ec;
+            border-radius: 7px;
+        }
+
+        .empty {
+            padding: 28px 12px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 10px;
+            border-radius: 15px;
+            background: #f1f5f9;
+            font-size: 22px;
+        }
+
+        .catalog-tools { margin-bottom: 15px; }
 
         .products {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
         }
 
         .product {
-            border: 1px solid #dce4ef;
+            display: flex;
+            flex-direction: column;
             padding: 15px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            min-width: 0;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .product:hover { border-color: #b9cdfa; box-shadow: 0 5px 16px #2563eb0c; }
+
+        .product-icon {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            margin-bottom: 13px;
+            border-radius: 12px;
+            background: #f0f5ff;
+            font-size: 21px;
+        }
+
+        .product h4 { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+        .product-price { margin: 6px 0 2px; font-size: 18px; font-weight: 800; }
+        .stock { font-size: 11px; color: var(--muted); margin-bottom: 13px; }
+        .stock.low { color: #b45309; }
+        .stock.none { color: var(--red); }
+
+        .product-actions {
+            display: grid;
+            grid-template-columns: 65px minmax(0, 1fr);
+            gap: 7px;
+            margin-top: auto;
+        }
+
+        .product-actions input {
+            width: 100%;
+            min-width: 0;
+            border: 1px solid #dbe2ec;
             border-radius: 8px;
+            padding: 8px;
         }
 
-        .product h3 {
-            margin-top: 0;
+        .product-actions button { padding: 8px 5px; font-size: 12px; }
+
+        .summary {
+            border-top: 1px solid var(--line);
+            padding-top: 15px;
+            margin-top: 8px;
         }
 
-        .muted {
-            color: #68758a;
-            font-size: 14px;
-        }
-
-        button {
-            border: none;
-            border-radius: 6px;
-            padding: 10px 14px;
-            cursor: pointer;
-            background: #075bd8;
-            color: white;
-            margin: 3px;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .danger {
-            background: #c62828;
-        }
-
-        .secondary {
-            background: #53657d;
-        }
-
-        .cart-item {
+        .summary-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding: 14px 0;
-            border-bottom: 1px solid #e5eaf2;
+            gap: 12px;
+            margin: 9px 0;
+            color: #536178;
         }
 
-        .cart-item:last-child {
-            border-bottom: none;
+        .summary-row strong { color: var(--ink); }
+        .summary-row.discount strong { color: var(--green); }
+
+        .summary-row.grand-total {
+            border-top: 1px dashed #dbe2ec;
+            padding-top: 13px;
+            margin-top: 14px;
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--ink);
         }
 
-        .cart-item input {
-            width: 75px;
-            padding: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
+        .coupon-box {
+            margin-top: 17px;
+            padding: 14px;
+            border-radius: 12px;
+            background: #f8faff;
+            border: 1px solid #e0e9ff;
         }
 
-        .item-actions {
+        .coupon-box label { display: block; font-weight: 750; margin-bottom: 8px; }
+        .coupon-help { font-size: 11px; color: var(--muted); margin-top: 7px; }
+
+        .checkout-button { width: 100%; margin-top: 15px; padding: 13px; font-size: 14px; }
+        .subtle-button { border: 0; background: transparent; color: var(--blue); padding: 5px 0; font-weight: 700; }
+
+        .coupon-list { display: grid; gap: 10px; }
+        .coupon-row {
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .total {
-            text-align: right;
-            font-size: 20px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-
-        #message {
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
             padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            display: none;
         }
 
+        .coupon-name { font-weight: 750; }
+        .coupon-note { color: var(--muted); font-size: 11px; }
+        .coupon-percent { color: var(--green); font-weight: 800; font-size: 17px; }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .report-stat {
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #edf1f6;
+            border-radius: 10px;
+            min-width: 0;
+        }
+
+        .report-stat span { display: block; color: var(--muted); font-size: 11px; }
+        .report-stat strong { display: block; margin-top: 5px; font-size: 17px; overflow-wrap: anywhere; }
+
+        details { margin-top: 18px; }
+        summary { cursor: pointer; color: #536178; font-weight: 750; font-size: 12px; }
         pre {
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
+            margin: 10px 0 0;
+            padding: 13px;
+            max-height: 300px;
+            overflow: auto;
             background: #101c2e;
             color: #d8e7ff;
-            padding: 15px;
-            border-radius: 8px;
-            min-height: 60px;
+            border-radius: 10px;
+            font-size: 11px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
         }
 
-        @media (max-width: 600px) {
-            .cart-item {
-                align-items: flex-start;
-                flex-direction: column;
-            }
+        .footer { color: var(--muted); text-align: center; padding: 20px; font-size: 11px; }
+
+        .loading { opacity: .65; pointer-events: none; }
+
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: minmax(0, 1fr); }
+            .right-column { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+            .checkout-panel { grid-row: span 2; }
+        }
+
+        @media (max-width: 650px) {
+            .topbar { padding: 16px 0; }
+            .topbar-inner, .page, .footer-inner { width: min(100% - 26px, 1240px); }
+            .top-status { display: none; }
+            .page { padding-top: 23px; }
+            .welcome { align-items: flex-start; flex-direction: column; }
+            .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .metric { padding: 14px; }
+            .metric-value { font-size: 21px; }
+            .panel { padding: 16px; }
+            .right-column { grid-template-columns: minmax(0, 1fr); }
+            .cart-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+            .cart-toolbar .cart-id-field { grid-column: 1 / -1; }
+            .products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+            .product { padding: 12px; }
+            .product-actions { grid-template-columns: 52px minmax(0, 1fr); }
+            .product-price { font-size: 16px; }
+        }
+
+        @media (max-width: 390px) {
+            .products { grid-template-columns: minmax(0, 1fr); }
+            .cart-line { grid-template-columns: minmax(0, 1fr); }
+            .item-controls { justify-content: flex-start; }
         }
     </style>
 </head>
 
 <body>
-<header>
-    <h1>Checkout & Rewards Service</h1>
-    <p>Product catalog and shopping cart</p>
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <div class="brand-mark">CR</div>
+            <div>
+                <h1>Commerce Console</h1>
+                <p>Checkout & Rewards Service</p>
+            </div>
+        </div>
+        <div class="top-status">
+            <span class="status-dot"></span>
+            API workspace
+        </div>
+    </div>
 </header>
 
-<main>
-    <div id="message"></div>
-
-    <section class="panel">
-        <h2>1. Shopping Cart</h2>
-
-        <button id="createCartBtn" onclick="createCart()">
-            Create New Cart
+<main class="page">
+    <section class="welcome">
+        <div>
+            <div class="eyebrow">Store management</div>
+            <h2>Checkout dashboard</h2>
+            <p>Manage your cart, apply rewards, and review sales activity.</p>
+        </div>
+        <button class="button primary" id="newCartButton" type="button">
+            + Create new cart
         </button>
-
-        <button class="secondary" onclick="refreshCart()">
-            Refresh Cart
-        </button>
-
-        <p id="cartInfo" class="muted">No cart selected.</p>
-        <div id="cartItems">Create a cart to begin shopping.</div>
-        <div id="cartTotal" class="total"></div>
     </section>
 
-    <section class="panel">
-        <h2>2. Product Catalog</h2>
-        <div id="products" class="products">Loading products...</div>
+    <div id="message" class="notice" role="status" aria-live="polite"></div>
+
+    <section class="metrics" aria-label="Sales overview">
+        <article class="metric">
+            <div class="metric-label">Total orders</div>
+            <div class="metric-value" id="metricOrders">—</div>
+            <div class="metric-note">Successful checkouts</div>
+        </article>
+        <article class="metric">
+            <div class="metric-label">Gross revenue</div>
+            <div class="metric-value" id="metricGross">—</div>
+            <div class="metric-note">Before discounts</div>
+        </article>
+        <article class="metric">
+            <div class="metric-label">Discounts given</div>
+            <div class="metric-value" id="metricDiscount">—</div>
+            <div class="metric-note">Coupon savings</div>
+        </article>
+        <article class="metric">
+            <div class="metric-label">Net revenue</div>
+            <div class="metric-value" id="metricNet">—</div>
+            <div class="metric-note">After discounts</div>
+        </article>
     </section>
 
-    <section class="panel">
-        <h2>3. Latest API Response</h2>
+    <div class="workspace">
+        <div class="left-column">
+            <section class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Shopping cart</h3>
+                        <p>Review items and adjust quantities before checkout.</p>
+                    </div>
+                    <span class="count-badge" id="cartCount">0</span>
+                </div>
+
+                <div class="cart-toolbar">
+                    <div class="cart-id-field">
+                        <label class="field-label" for="cartIdInput">Existing cart ID</label>
+                        <input class="field" id="cartIdInput" type="number"
+                               min="1" placeholder="Enter cart ID">
+                    </div>
+                    <button class="button secondary" id="loadCartButton" type="button">
+                        Load cart
+                    </button>
+                    <button class="button secondary" id="refreshCartButton" type="button">
+                        Refresh
+                    </button>
+                </div>
+
+                <div class="cart-status">
+                    <span id="cartStatusPill" class="pill">No cart</span>
+                    <span id="cartDescription">Create a cart or load an existing one.</span>
+                </div>
+
+                <div id="cartItems">
+                    <div class="empty">
+                        <div class="empty-icon">🛒</div>
+                        <strong>Your cart is waiting</strong>
+                        <div>Create a cart to start shopping.</div>
+                    </div>
+                </div>
+
+                <div class="summary">
+                    <div class="summary-row">
+                        <span>Items subtotal</span>
+                        <strong id="subtotalValue">₹0.00</strong>
+                    </div>
+                    <div class="summary-row discount">
+                        <span>Coupon discount</span>
+                        <strong id="discountValue">− ₹0.00</strong>
+                    </div>
+                    <div class="summary-row grand-total">
+                        <span>Estimated total</span>
+                        <strong id="totalValue">₹0.00</strong>
+                    </div>
+                    <p class="coupon-help">
+                        The final amount is confirmed by the checkout API.
+                    </p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Product catalog</h3>
+                        <p>Select products to add them to your active cart.</p>
+                    </div>
+                    <button class="subtle-button" id="reloadProductsButton" type="button">
+                        Reload products ↻
+                    </button>
+                </div>
+                <div class="catalog-tools">
+                    <input class="field" id="productSearch" type="search"
+                           placeholder="Search products..." aria-label="Search products">
+                </div>
+                <div id="products" class="products">
+                    <div class="empty">Loading products…</div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="right-column">
+            <section class="panel checkout-panel">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Complete checkout</h3>
+                        <p>Apply an eligible reward coupon, then place the order.</p>
+                    </div>
+                </div>
+
+                <div class="coupon-box">
+                    <label for="couponSelect">Reward coupon</label>
+                    <select id="couponSelect">
+                        <option value="">No coupon</option>
+                    </select>
+                    <div class="coupon-help" id="couponHelp">
+                        No coupon selected.
+                    </div>
+                    <button class="subtle-button" id="reloadCouponsButton" type="button">
+                        Refresh available coupons ↻
+                    </button>
+                </div>
+
+                <button class="button primary checkout-button"
+                        id="checkoutButton" type="button" disabled>
+                    Place order →
+                </button>
+
+                <p class="coupon-help">
+                    Repeated requests use the same key while a checkout attempt
+                    is being retried. No real payment is collected.
+                </p>
+
+                <div id="lastOrder" hidden></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Rewards</h3>
+                        <p>Track coupon availability and redemption.</p>
+                    </div>
+                </div>
+                <div class="report-grid">
+                    <div class="report-stat">
+                        <span>Generated</span>
+                        <strong id="couponGenerated">—</strong>
+                    </div>
+                    <div class="report-stat">
+                        <span>Available</span>
+                        <strong id="couponAvailable">—</strong>
+                    </div>
+                    <div class="report-stat">
+                        <span>Redeemed</span>
+                        <strong id="couponRedeemed">—</strong>
+                    </div>
+                    <div class="report-stat">
+                        <span>Reward rule</span>
+                        <strong>Every 5 orders*</strong>
+                    </div>
+                </div>
+                <p class="coupon-help">
+                    *Displayed rule is the current seed setting. Change it here
+                    if you configure a different milestone.
+                </p>
+            </section>
+
+            <section class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Sales by product</h3>
+                        <p>Based on saved order-item snapshots.</p>
+                    </div>
+                    <button class="subtle-button" id="refreshReportButton" type="button">
+                        Refresh ↻
+                    </button>
+                </div>
+                <div id="productReport" class="coupon-list">
+                    <div class="empty">Loading report…</div>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <details>
+        <summary>Developer tools — latest API response</summary>
         <pre id="apiResponse">No API requests yet.</pre>
-    </section>
+    </details>
 </main>
 
+<footer class="footer">
+    <div class="footer-inner">Checkout & Rewards Service · Laravel API demo</div>
+</footer>
+
 <script>
-    let currentCartId = null;
-    let currentCartStatus = null;
+    const state = {
+        cartId: null,
+        cartStatus: null,
+        cart: null,
+        products: [],
+        coupons: [],
+        report: null,
+        checkoutKey: null,
+        busy: false
+    };
 
-    function showMessage(message, isError = false) {
-        const element = document.getElementById('message');
+    const $ = id => document.getElementById(id);
 
-        element.style.display = 'block';
-        element.style.background = isError ? '#ffebee' : '#e8f5e9';
-        element.style.color = isError ? '#b71c1c' : '#1b5e20';
+    function formatMoney(cents) {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR'
+        }).format(Number(cents || 0) / 100);
+    }
+
+    function showMessage(message, type = 'success') {
+        const element = $('message');
         element.textContent = message;
+        element.className = 'notice ' + type;
+    }
+
+    function clearMessage() {
+        $('message').className = 'notice';
+        $('message').textContent = '';
+    }
+
+    function setBusy(busy) {
+        state.busy = busy;
+        document.body.classList.toggle('loading', busy);
+        $('newCartButton').disabled = busy;
+        $('loadCartButton').disabled = busy;
+        $('refreshCartButton').disabled = busy;
+        $('checkoutButton').disabled =
+            busy || !state.cartId ||
+            state.cartStatus !== 'open' ||
+            !state.cart ||
+            !state.cart.items ||
+            state.cart.items.length === 0;
+    }
+
+    function unwrap(payload) {
+        return payload && payload.data !== undefined
+            ? payload.data
+            : payload;
     }
 
     async function apiRequest(url, method = 'GET', body = null) {
@@ -209,26 +772,36 @@
             }
         };
 
-        if (body !== null) {
-            options.body = JSON.stringify(body);
+        if (body !== null) options.body = JSON.stringify(body);
+
+        let response;
+
+        try {
+            response = await fetch(url, options);
+        } catch (networkError) {
+            throw new Error('Could not reach the Laravel server. Check that it is running.');
         }
 
-        const response = await fetch(url, options);
         const data = await response.json().catch(() => ({
-            message: 'The server returned an invalid response.'
+            message: 'The server returned a non-JSON response.'
         }));
 
-        document.getElementById('apiResponse').textContent =
-            JSON.stringify({
-                status: response.status,
-                response: data
-            }, null, 2);
+        $('apiResponse').textContent = JSON.stringify({
+            method,
+            url,
+            status: response.status,
+            response: data
+        }, null, 2);
 
         if (!response.ok) {
-            const error = new Error(
-                data.message || 'Request failed.'
-            );
+            let message = data.message || 'Request failed.';
 
+            if (data.errors) {
+                const firstError = Object.values(data.errors).flat()[0];
+                if (firstError) message = firstError;
+            }
+
+            const error = new Error(message);
             error.status = response.status;
             error.data = data;
             throw error;
@@ -237,265 +810,575 @@
         return data;
     }
 
-    function formatMoney(cents) {
-        return '₹' + (Number(cents) / 100).toFixed(2);
+    function makeIdempotencyKey() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+
+        return 'checkout-' + Date.now() + '-' +
+            Math.random().toString(36).slice(2, 12);
+    }
+
+    function productIcon(name) {
+        const value = name.toLowerCase();
+
+        if (value.includes('mouse')) return '🖱️';
+        if (value.includes('keyboard')) return '⌨️';
+        if (value.includes('cable')) return '🔌';
+        if (value.includes('stand')) return '💻';
+        if (value.includes('webcam') || value.includes('camera')) return '📷';
+
+        return '📦';
+    }
+
+    function updateSummary() {
+        const cart = state.cart;
+        const items = cart && Array.isArray(cart.items) ? cart.items : [];
+
+        const subtotal = Number(cart?.total_cents || 0);
+        const selected = $('couponSelect').value;
+        const coupon = state.coupons.find(item => String(item.id) === selected);
+
+        // Preview only. The backend remains the source of truth.
+        const previewDiscount = coupon
+            ? Math.floor(subtotal * Number(coupon.discount_percent) / 100)
+            : 0;
+
+        $('subtotalValue').textContent = formatMoney(subtotal);
+        $('discountValue').textContent = '− ' + formatMoney(previewDiscount);
+        $('totalValue').textContent = formatMoney(
+            Math.max(0, subtotal - previewDiscount)
+        );
+        $('cartCount').textContent = items.reduce(
+            (sum, item) => sum + Number(item.quantity || 0), 0
+        );
+
+        $('checkoutButton').disabled =
+            state.busy || !state.cartId ||
+            state.cartStatus !== 'open' || items.length === 0;
+
+        $('couponHelp').textContent = coupon
+            ? `${coupon.discount_percent}% discount selected. Final amount is calculated by the server.`
+            : 'Checkout without a coupon.';
+
+        if (state.cartStatus !== 'open') {
+            $('couponSelect').disabled = true;
+        } else {
+            $('couponSelect').disabled = false;
+        }
+    }
+
+    function renderProducts() {
+        const container = $('products');
+        const search = $('productSearch').value.trim().toLowerCase();
+
+        const products = state.products.filter(product =>
+            product.name.toLowerCase().includes(search)
+        );
+
+        container.replaceChildren();
+
+        if (!products.length) {
+            container.textContent = search
+                ? 'No products match your search.'
+                : 'No products are available.';
+            return;
+        }
+
+        products.forEach(product => {
+            const card = document.createElement('article');
+            card.className = 'product';
+
+            const icon = document.createElement('div');
+            icon.className = 'product-icon';
+            icon.textContent = productIcon(product.name);
+
+            const name = document.createElement('h4');
+            name.textContent = product.name;
+
+            const price = document.createElement('div');
+            price.className = 'product-price';
+            price.textContent = formatMoney(product.price_cents);
+
+            const stock = document.createElement('div');
+            stock.className = 'stock';
+            stock.textContent = Number(product.stock) < 1
+                ? 'Out of stock'
+                : `${product.stock} available`;
+
+            if (Number(product.stock) < 1) stock.classList.add('none');
+            else if (Number(product.stock) <= 3) stock.classList.add('low');
+
+            const actions = document.createElement('div');
+            actions.className = 'product-actions';
+
+            const quantity = document.createElement('input');
+            quantity.type = 'number';
+            quantity.min = '1';
+            quantity.max = String(product.stock);
+            quantity.step = '1';
+            quantity.value = '1';
+            quantity.setAttribute('aria-label', 'Quantity for ' + product.name);
+
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'button primary';
+            add.textContent = 'Add';
+            add.disabled = Number(product.stock) < 1 ||
+                state.cartStatus !== 'open' || state.busy;
+
+            add.addEventListener('click', () => {
+                const qty = Number(quantity.value);
+
+                if (!Number.isInteger(qty) || qty < 1) {
+                    showMessage('Enter a positive whole-number quantity.', 'error');
+                    return;
+                }
+
+                if (qty > Number(product.stock)) {
+                    showMessage('Requested quantity exceeds the displayed stock.', 'error');
+                    return;
+                }
+
+                addItem(product.id, qty);
+            });
+
+            actions.append(quantity, add);
+            card.append(icon, name, price, stock, actions);
+            container.appendChild(card);
+        });
     }
 
     async function loadProducts() {
-        const container = document.getElementById('products');
-
         try {
-            const result = await apiRequest('/api/products');
-            container.innerHTML = '';
-
-            result.data.forEach(product => {
-                const card = document.createElement('div');
-                card.className = 'product';
-
-                const name = document.createElement('h3');
-                name.textContent = product.name;
-
-                const price = document.createElement('p');
-                price.textContent = 'Price: ' + formatMoney(product.price_cents);
-
-                const stock = document.createElement('p');
-                stock.className = 'muted';
-                stock.textContent = 'Available stock: ' + product.stock;
-
-                const button = document.createElement('button');
-                button.textContent = 'Add to Cart';
-                button.disabled = product.stock < 1 ||
-                    currentCartStatus !== 'open';
-                button.onclick = () => addItem(product.id, product.stock);
-
-                card.append(name, price, stock, button);
-                container.appendChild(card);
-            });
+            const payload = await apiRequest('/api/products');
+            state.products = unwrap(payload) || [];
+            renderProducts();
         } catch (error) {
-            container.textContent = error.message;
-            showMessage(error.message, true);
+            $('products').textContent = error.message;
+            showMessage(error.message, 'error');
         }
     }
 
     async function createCart() {
+        clearMessage();
+        setBusy(true);
+
         try {
-            const result = await apiRequest('/api/carts', 'POST');
+            const payload = await apiRequest('/api/carts', 'POST');
+            const cart = unwrap(payload);
 
-            currentCartId = result.data.id;
-            currentCartStatus = result.data.status;
+            state.cartId = cart.id;
+            state.cartStatus = cart.status;
+            state.checkoutKey = null;
+            $('cartIdInput').value = cart.id;
 
-            showMessage('Cart #' + currentCartId + ' created.');
-            await refreshCart();
-            await loadProducts();
+            await refreshCart(false);
+            showMessage(`Cart #${cart.id} created successfully.`);
         } catch (error) {
-            showMessage(error.message, true);
+            showMessage(error.message, 'error');
+        } finally {
+            setBusy(false);
+            renderProducts();
         }
     }
 
-    async function addItem(productId, stock) {
-        if (!currentCartId) {
-            showMessage('Please create a cart first.', true);
+    async function loadCartFromInput() {
+        const id = Number($('cartIdInput').value);
+
+        if (!Number.isInteger(id) || id < 1) {
+            showMessage('Enter a valid cart ID.', 'error');
             return;
         }
 
-        if (currentCartStatus !== 'open') {
-            showMessage('This cart is no longer open.', true);
-            return;
-        }
-
-        const quantity = Number(
-            prompt('Enter quantity to add (1 to ' + stock + '):', '1')
-        );
-
-        if (!Number.isInteger(quantity) || quantity < 1) {
-            showMessage('Enter a valid positive whole number.', true);
-            return;
-        }
-
-        try {
-            await apiRequest(
-                `/api/carts/${currentCartId}/items`,
-                'POST',
-                {
-                    product_id: productId,
-                    quantity: quantity
-                }
-            );
-
-            showMessage('Product added to cart.');
-            await refreshCart();
-        } catch (error) {
-            showMessage(error.message, true);
-        }
+        state.cartId = id;
+        state.checkoutKey = null;
+        await refreshCart();
     }
 
-    async function refreshCart() {
-        if (!currentCartId) {
-            showMessage('Please create a cart first.', true);
+    async function addItem(productId, quantity) {
+        if (!state.cartId) {
+            showMessage('Create a cart or load an existing cart first.', 'error');
             return;
         }
 
+        if (state.cartStatus !== 'open') {
+            showMessage('This cart is already checked out.', 'error');
+            return;
+        }
+
+        clearMessage();
+        setBusy(true);
+
         try {
-            const result = await apiRequest(
-                `/api/carts/${currentCartId}`
-            );
-
-            const cart = result.data;
-            currentCartStatus = cart.status;
-
-            document.getElementById('cartInfo').textContent =
-                `Cart #${cart.id} | Status: ${cart.status}`;
-
-            const container = document.getElementById('cartItems');
-            container.innerHTML = '';
-
-            if (cart.items.length === 0) {
-                container.textContent = 'Your cart is empty.';
-            }
-
-            cart.items.forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'cart-item';
-
-                const details = document.createElement('div');
-
-                const name = document.createElement('strong');
-                name.textContent = item.name;
-
-                const price = document.createElement('div');
-                price.className = 'muted';
-                price.textContent =
-                    `${formatMoney(item.unit_price_cents)} each`;
-
-                const subtotal = document.createElement('div');
-                subtotal.textContent =
-                    'Subtotal: ' + formatMoney(item.line_total_cents);
-
-                details.append(name, price, subtotal);
-
-                const actions = document.createElement('div');
-                actions.className = 'item-actions';
-
-                const quantityInput = document.createElement('input');
-                quantityInput.type = 'number';
-                quantityInput.min = '1';
-                quantityInput.step = '1';
-                quantityInput.value = item.quantity;
-                quantityInput.setAttribute(
-                    'aria-label',
-                    'Quantity for ' + item.name
-                );
-
-                const updateButton = document.createElement('button');
-                updateButton.textContent = 'Update';
-                updateButton.disabled = currentCartStatus !== 'open';
-                updateButton.onclick = () =>
-                    updateItem(item.product_id, quantityInput.value);
-
-                const removeButton = document.createElement('button');
-                removeButton.textContent = 'Remove';
-                removeButton.className = 'danger';
-                removeButton.disabled = currentCartStatus !== 'open';
-                removeButton.onclick = () =>
-                    removeItem(item.product_id);
-
-                actions.append(quantityInput, updateButton, removeButton);
-                row.append(details, actions);
-                container.appendChild(row);
+            await apiRequest(`/api/carts/${state.cartId}/items`, 'POST', {
+                product_id: productId,
+                quantity
             });
 
-            document.getElementById('cartTotal').textContent =
-                'Cart Total: ' + formatMoney(cart.total_cents);
-
-            await loadProducts();
+            // Cart changed, so a future checkout must use a new key.
+            state.checkoutKey = null;
+            await refreshCart(false);
+            showMessage('Product added to your cart.');
         } catch (error) {
-            showMessage(error.message, true);
+            showMessage(error.message, 'error');
+        } finally {
+            setBusy(false);
+            renderProducts();
         }
     }
 
-    async function updateItem(productId, quantityValue) {
+    function renderCart(cart) {
+        state.cart = cart;
+        state.cartId = cart.id;
+        state.cartStatus = cart.status;
+
+        $('cartIdInput').value = cart.id;
+        $('cartStatusPill').textContent = cart.status.replace('_', ' ');
+        $('cartStatusPill').className = 'pill ' + cart.status;
+        $('cartDescription').textContent =
+            cart.status === 'open'
+                ? 'Your cart is ready for checkout.'
+                : 'This cart has already been checked out.';
+
+        const container = $('cartItems');
+        container.replaceChildren();
+
+        const items = Array.isArray(cart.items) ? cart.items : [];
+
+        if (!items.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+
+            const icon = document.createElement('div');
+            icon.className = 'empty-icon';
+            icon.textContent = '🛒';
+
+            const title = document.createElement('strong');
+            title.textContent = 'Your cart is empty';
+
+            const note = document.createElement('div');
+            note.textContent = 'Add a product from the catalog below.';
+
+            empty.append(icon, title, note);
+            container.appendChild(empty);
+        }
+
+        items.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'cart-line';
+
+            const info = document.createElement('div');
+
+            const name = document.createElement('div');
+            name.className = 'item-name';
+            name.textContent = item.name;
+
+            const description = document.createElement('div');
+            description.className = 'item-description';
+            description.textContent =
+                `${formatMoney(item.unit_price_cents)} each · Qty ${item.quantity}`;
+
+            const subtotal = document.createElement('div');
+            subtotal.className = 'item-subtotal';
+            subtotal.textContent = formatMoney(item.line_total_cents);
+
+            info.append(name, description, subtotal);
+
+            const controls = document.createElement('div');
+            controls.className = 'item-controls';
+
+            const quantity = document.createElement('input');
+            quantity.className = 'quantity';
+            quantity.type = 'number';
+            quantity.min = '1';
+            quantity.step = '1';
+            quantity.value = item.quantity;
+            quantity.setAttribute('aria-label', 'Quantity for ' + item.name);
+
+            const update = document.createElement('button');
+            update.className = 'button secondary small';
+            update.textContent = 'Update';
+            update.disabled = cart.status !== 'open';
+
+            update.addEventListener('click', () =>
+                updateItem(item, quantity.value)
+            );
+
+            const remove = document.createElement('button');
+            remove.className = 'button danger small';
+            remove.textContent = 'Remove';
+            remove.disabled = cart.status !== 'open';
+
+            remove.addEventListener('click', () => removeItem(item));
+
+            controls.append(quantity, update, remove);
+            row.append(info, controls);
+            container.appendChild(row);
+        });
+
+        updateSummary();
+        renderProducts();
+    }
+
+    async function refreshCart(showSuccess = false) {
+        if (!state.cartId) {
+            showMessage('Create a cart or load an existing cart first.', 'error');
+            return;
+        }
+
+        try {
+            const payload = await apiRequest(`/api/carts/${state.cartId}`);
+            const cart = unwrap(payload);
+            renderCart(cart);
+
+            if (showSuccess) showMessage('Cart refreshed.');
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    }
+
+    async function updateItem(item, quantityValue) {
         const quantity = Number(quantityValue);
 
         if (!Number.isInteger(quantity) || quantity < 1) {
-            showMessage('Quantity must be a whole number greater than zero.', true);
+            showMessage('Quantity must be a positive whole number.', 'error');
             return;
         }
 
+        if (!item.id) {
+            showMessage(
+                'The cart API response is missing the cart item ID. Include item.id in each returned cart item.',
+                'error'
+            );
+            return;
+        }
+
+        setBusy(true);
+
         try {
-            /*
-             * The current GET cart response identifies items by product_id.
-             * We first locate the cart item ID, then use it in the PUT URL.
-             */
-            const result = await apiRequest(
-                `/api/carts/${currentCartId}`
-            );
-
-            const item = result.data.items.find(
-                entry => entry.product_id === productId
-            );
-
-            if (!item) {
-                showMessage('Cart item not found. Refresh the cart.', true);
-                return;
-            }
-
-            // The API must expose each cart item's database ID for this route.
-            if (!item.id) {
-                showMessage(
-                    'The cart API must return each item ID before quantity updates can work.',
-                    true
-                );
-                return;
-            }
-
             await apiRequest(
-                `/api/carts/${currentCartId}/items/${item.id}`,
+                `/api/carts/${state.cartId}/items/${item.id}`,
                 'PUT',
-                { quantity: quantity }
+                { quantity }
             );
 
-            showMessage('Quantity updated.');
-            await refreshCart();
+            state.checkoutKey = null;
+            await refreshCart(false);
+            showMessage('Cart quantity updated.');
         } catch (error) {
-            showMessage(error.message, true);
+            showMessage(error.message, 'error');
+        } finally {
+            setBusy(false);
         }
     }
 
-    async function removeItem(productId) {
-        if (!confirm('Remove this product from your cart?')) {
+    async function removeItem(item) {
+        if (!item.id) {
+            showMessage('Cart item ID is missing from the API response.', 'error');
             return;
         }
 
+        if (!window.confirm(`Remove "${item.name}" from this cart?`)) return;
+
+        setBusy(true);
+
         try {
-            const result = await apiRequest(
-                `/api/carts/${currentCartId}`
-            );
-
-            const item = result.data.items.find(
-                entry => entry.product_id === productId
-            );
-
-            if (!item || !item.id) {
-                showMessage(
-                    'The cart API must return the cart item ID before removal can work.',
-                    true
-                );
-                return;
-            }
-
             await apiRequest(
-                `/api/carts/${currentCartId}/items/${item.id}`,
+                `/api/carts/${state.cartId}/items/${item.id}`,
                 'DELETE'
             );
 
-            showMessage('Product removed from cart.');
-            await refreshCart();
+            state.checkoutKey = null;
+            await refreshCart(false);
+            showMessage('Product removed from your cart.');
         } catch (error) {
-            showMessage(error.message, true);
+            showMessage(error.message, 'error');
+        } finally {
+            setBusy(false);
         }
     }
 
-    loadProducts();
+    async function loadCoupons() {
+        const select = $('couponSelect');
+
+        try {
+            const payload = await apiRequest('/api/coupons/available');
+            state.coupons = unwrap(payload) || [];
+
+            const previous = select.value;
+            select.replaceChildren();
+
+            const none = document.createElement('option');
+            none.value = '';
+            none.textContent = 'No coupon';
+            select.appendChild(none);
+
+            state.coupons.forEach(coupon => {
+                const option = document.createElement('option');
+                option.value = coupon.id;
+                option.textContent =
+                    `Coupon #${coupon.id} · ${coupon.discount_percent}% off`;
+                select.appendChild(option);
+            });
+
+            if (state.coupons.some(c => String(c.id) === previous)) {
+                select.value = previous;
+            }
+
+            updateSummary();
+        } catch (error) {
+            showMessage('Could not load coupons: ' + error.message, 'error');
+        }
+    }
+
+    async function checkout() {
+        if (!state.cartId || state.cartStatus !== 'open') {
+            showMessage('Select an open cart before checkout.', 'error');
+            return;
+        }
+
+        if (!state.cart?.items?.length) {
+            showMessage('Add at least one product before checkout.', 'error');
+            return;
+        }
+
+        if (!state.checkoutKey) state.checkoutKey = makeIdempotencyKey();
+
+        const body = { idempotency_key: state.checkoutKey };
+        const couponId = $('couponSelect').value;
+
+        if (couponId) body.coupon_id = Number(couponId);
+
+        clearMessage();
+        setBusy(true);
+        $('checkoutButton').textContent = 'Processing…';
+
+        try {
+            const payload = await apiRequest(
+                `/api/carts/${state.cartId}/checkout`,
+                'POST',
+                body
+            );
+
+            const order = unwrap(payload);
+            const orderId = order.id ?? order.order?.id;
+
+            $('lastOrder').hidden = false;
+            $('lastOrder').textContent = orderId
+                ? `Order #${orderId} placed successfully.`
+                : 'Order placed successfully.';
+
+            showMessage(
+                orderId
+                    ? `Checkout successful. Order #${orderId} has been created.`
+                    : 'Checkout successful. Your order has been created.'
+            );
+
+            state.checkoutKey = null;
+            $('couponSelect').value = '';
+
+            await refreshCart(false);
+            await loadProducts();
+            await loadCoupons();
+            await loadReport();
+        } catch (error) {
+            // Preserve the key after a failed/uncertain request.
+            // A retry can safely use the same key if the first request
+            // actually committed but its response was lost.
+            showMessage(error.message, 'error');
+
+            if (error.status === 409 || error.status === 422) {
+                // These are definitive application responses, not network
+                // uncertainty. Let the user correct the cart or coupon.
+                state.checkoutKey = null;
+            }
+        } finally {
+            $('checkoutButton').textContent = 'Place order →';
+            setBusy(false);
+            updateSummary();
+        }
+    }
+
+    async function loadReport() {
+        try {
+            const payload = await apiRequest('/api/admin/report');
+            const report = unwrap(payload);
+            state.report = report;
+
+            const orders = report.orders || {};
+            const coupons = report.coupons || {};
+
+            $('metricOrders').textContent = Number(orders.total || 0).toLocaleString('en-IN');
+            $('metricGross').textContent = formatMoney(orders.gross_cents);
+            $('metricDiscount').textContent = formatMoney(orders.discount_cents);
+            $('metricNet').textContent = formatMoney(orders.net_cents);
+
+            $('couponGenerated').textContent = Number(coupons.generated || 0);
+            $('couponAvailable').textContent = Number(coupons.available || 0);
+            $('couponRedeemed').textContent = Number(coupons.redeemed || 0);
+
+            const container = $('productReport');
+            container.replaceChildren();
+
+            const products = report.products || [];
+
+            if (!products.length) {
+                const empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'No product sales yet.';
+                container.appendChild(empty);
+            } else {
+                products.forEach(product => {
+                    const row = document.createElement('div');
+                    row.className = 'coupon-row';
+
+                    const left = document.createElement('div');
+                    const name = document.createElement('div');
+                    name.className = 'coupon-name';
+                    name.textContent = product.product_name;
+
+                    const note = document.createElement('div');
+                    note.className = 'coupon-note';
+                    note.textContent = `${Number(product.quantity_sold)} sold`;
+
+                    left.append(name, note);
+
+                    const amount = document.createElement('div');
+                    amount.className = 'coupon-percent';
+                    amount.textContent = formatMoney(product.gross_cents);
+
+                    row.append(left, amount);
+                    container.appendChild(row);
+                });
+            }
+        } catch (error) {
+            $('productReport').textContent = 'Report unavailable: ' + error.message;
+        }
+    }
+
+    $('newCartButton').addEventListener('click', createCart);
+    $('loadCartButton').addEventListener('click', loadCartFromInput);
+    $('refreshCartButton').addEventListener('click', () => refreshCart(true));
+    $('reloadProductsButton').addEventListener('click', loadProducts);
+    $('reloadCouponsButton').addEventListener('click', loadCoupons);
+    $('refreshReportButton').addEventListener('click', loadReport);
+    $('checkoutButton').addEventListener('click', checkout);
+    $('productSearch').addEventListener('input', renderProducts);
+    $('couponSelect').addEventListener('change', updateSummary);
+
+    async function initialize() {
+        await Promise.all([
+            loadProducts(),
+            loadCoupons(),
+            loadReport()
+        ]);
+
+        renderProducts();
+        updateSummary();
+    }
+
+    initialize();
 </script>
 </body>
 </html>
